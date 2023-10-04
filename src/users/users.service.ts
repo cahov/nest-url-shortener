@@ -32,6 +32,21 @@ export class UsersService {
       throw new BadRequestException('Failed to fetch user by email');
     }
   }
+  async getUserProfile(userId: string) {
+    try {
+      const user = await this.Prisma.user.findUnique({
+        where: { id: userId }, // Buscar al usuario por su ID
+        select: { name: true, email: true }, // Seleccionar solo los campos que deseas devolver en el perfil
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException('Failed to fetch user profile');
+    }
+  }
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const errors = await validate(createUserDto);
     if (errors.length > 0) {
@@ -44,6 +59,7 @@ export class UsersService {
       if (existingUser) {
         throw new ConflictException('Email already exist');
       }
+      createUserDto.role = 'USER';
       createUserDto.password = await encryptPassword(createUserDto.password);
       const newUser = await this.Prisma.user.create({
         data: createUserDto,

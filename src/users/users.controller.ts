@@ -5,14 +5,21 @@ import {
   Controller,
   Get,
   Post,
+  Req,
+  SetMetadata,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private UserService: UsersService) {}
   @Get()
+  @SetMetadata('roles', 'ADMIN') // Especifica el rol requerido para esta ruta
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllUsers() {
     try {
       const users = await this.UserService.getAllUsers();
@@ -42,5 +49,13 @@ export class UsersController {
         });
       }
     }
+  }
+  @UseGuards(JwtAuthGuard) // Proteger la ruta con JwtAuthGuard
+  @Get('profile')
+  async getUserProfile(@Req() req) {
+    const userId = req.user.userId; // Acceder al userId del usuario autenticado
+    // Luego, utiliza el userId para obtener el perfil del usuario desde tu servicio
+    const userProfile = await this.UserService.getUserProfile(userId);
+    return userProfile;
   }
 }
